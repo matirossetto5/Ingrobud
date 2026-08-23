@@ -56,6 +56,32 @@ firebase deploy --only firestore:rules,storage:rules
 > credenciales públicas del SDK (son públicas por diseño en apps Firebase; la seguridad real la
 > dan las reglas, no el `.env`).
 
+## Testear localmente (sin tocar Firebase real)
+
+Para probar la app sin depender del proyecto de Firebase real (y sin necesidad de hacer commits
+o deploys para cada prueba), podés usar los [Firebase Local Emulators](https://firebase.google.com/docs/emulator-suite):
+
+1. Instalá la Firebase CLI si no la tenés: `npm install -g firebase-tools`.
+2. En `.env`, poné `VITE_USE_FIREBASE_EMULATOR=true` (no hace falta completar las demás variables
+   de Firebase en este modo).
+3. Levantá los emuladores (Auth, Firestore, Storage) en una terminal:
+   ```bash
+   npm run emulators
+   ```
+   Esto abre la UI de los emuladores en `http://127.0.0.1:4000`, donde podés ver/crear usuarios
+   y datos de prueba a mano.
+4. En otra terminal, levantá la app normalmente:
+   ```bash
+   npm run dev
+   ```
+
+Con `VITE_USE_FIREBASE_EMULATOR=true`, `src/lib/firebase.ts` conecta el SDK a los emuladores
+locales en vez del proyecto real. Los datos viven solo en memoria del emulador (se pueden
+exportar/importar con `firebase emulators:start --export-on-exit --import=./emulator-data` si
+querés persistirlos entre sesiones) y nunca tocan Firestore/Storage/Auth de producción. Como todo
+corre en tu máquina, podés iterar y probar cambios libremente sin necesidad de pushear nada al
+repo hasta que estés conforme.
+
 ## Estado del proyecto
 
 **Fase 1: Setup** ✅
