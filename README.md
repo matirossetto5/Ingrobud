@@ -73,8 +73,13 @@ firebase deploy --only firestore:rules,storage:rules
 - Baja con confirmación
 - Datos servidos con TanStack Query (`src/hooks/useClientes.ts`)
 
+**Fase 3 (actual): Presupuestos (ítems, secciones, PDF)** ✅
+- Colección `presupuestos` en Firestore, con numeración autoincremental (`counters/presupuestos`)
+- Alta y edición con secciones e ítems dinámicos (cantidad, precio unitario)
+- Listado con estado, cliente y total; vista de detalle
+- Exportación a PDF (`jspdf` + `jspdf-autotable`, cargado en un chunk aparte)
+
 **Próximas fases**
-- Fase 3: Presupuestos (ítems, secciones, PDF)
 - Fase 4: Cobros (pagos parciales, saldos)
 - Fase 5: Dashboard/reportes de caja
 - Fase 6: Pulido PWA

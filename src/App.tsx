@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LoginPage } from '@/routes/LoginPage'
 import { DashboardPage } from '@/routes/DashboardPage'
 import { ClientesPage } from '@/routes/ClientesPage'
+import { PresupuestosPage } from '@/routes/PresupuestosPage'
+import { PresupuestoFormPage } from '@/routes/PresupuestoFormPage'
+import { PresupuestoDetailPage } from '@/routes/PresupuestoDetailPage'
 import { PlaceholderPage } from '@/routes/PlaceholderPage'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -20,10 +23,10 @@ function App() {
         >
           <Route path="/" element={<DashboardPage />} />
           <Route path="/clientes" element={<ClientesPage />} />
-          <Route
-            path="/presupuestos"
-            element={<PlaceholderPage title="Presupuestos" description="Creación, envío y seguimiento de presupuestos." />}
-          />
+          <Route path="/presupuestos" element={<PresupuestosPage />} />
+          <Route path="/presupuestos/nuevo" element={<PresupuestoFormPage />} />
+          <Route path="/presupuestos/:id" element={<PresupuestoDetailPage />} />
+          <Route path="/presupuestos/:id/editar" element={<PresupuestoFormPage />} />
           <Route
             path="/cobros"
             element={<PlaceholderPage title="Cobros" description="Registro de pagos y saldos pendientes." />}
