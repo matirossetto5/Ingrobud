@@ -85,8 +85,12 @@ firebase deploy --only firestore:rules,storage:rules
 - Registro de pagos desde un modal (fecha, monto, método, notas) y baja con confirmación
 - Historial de pagos
 
+**Fase 5 (actual): Dashboard/reportes de caja** ✅
+- Cobrado del mes, pendiente de cobro total y presupuestos enviados
+- Listado de saldos pendientes y últimos pagos
+- Últimos presupuestos con su estado
+
 **Próximas fases**
-- Fase 5: Dashboard/reportes de caja
 - Fase 6: Pulido PWA
 - Fase 7: Deploy
 
