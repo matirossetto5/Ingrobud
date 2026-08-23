@@ -90,8 +90,13 @@ firebase deploy --only firestore:rules,storage:rules
 - Listado de saldos pendientes y últimos pagos
 - Últimos presupuestos con su estado
 
+**Fase 6 (actual): Pulido PWA** ✅
+- Aviso de actualización disponible y de app lista para uso offline (`virtual:pwa-register/react`)
+- Botón "Instalar app" (desktop y mobile) usando `beforeinstallprompt`
+- Banner de "sin conexión" cuando se pierde la red
+- `navigateFallback` a `index.html` para navegación offline y metatags iOS (`apple-mobile-web-app-*`)
+
 **Próximas fases**
-- Fase 6: Pulido PWA
 - Fase 7: Deploy
 
 ## Despliegue (a definir)

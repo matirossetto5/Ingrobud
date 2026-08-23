@@ -8,10 +8,12 @@ import { PresupuestoDetailPage } from '@/routes/PresupuestoDetailPage'
 import { CobrosPage } from '@/routes/CobrosPage'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { PwaUpdatePrompt } from '@/components/PwaUpdatePrompt'
 
 function App() {
   return (
     <BrowserRouter>
+      <PwaUpdatePrompt />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
