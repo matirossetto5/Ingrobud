@@ -58,7 +58,7 @@ firebase deploy --only firestore:rules,storage:rules
 
 ## Estado del proyecto
 
-**Fase 1 (actual): Setup** ✅
+**Fase 1: Setup** ✅
 - Scaffold Vite + React + TS + Tailwind
 - Conexión a Firebase (Auth/Firestore/Storage)
 - Login de admin único
@@ -66,8 +66,14 @@ firebase deploy --only firestore:rules,storage:rules
 - PWA instalable con la identidad de Ingroma
 - Reglas de seguridad de Firestore/Storage
 
+**Fase 2 (actual): Clientes (CRUD)** ✅
+- Colección `clientes` en Firestore (nombre, empresa, email, teléfono, dirección, notas)
+- Listado con búsqueda por nombre/empresa
+- Alta y edición desde un modal
+- Baja con confirmación
+- Datos servidos con TanStack Query (`src/hooks/useClientes.ts`)
+
 **Próximas fases**
-- Fase 2: Clientes (CRUD)
 - Fase 3: Presupuestos (ítems, secciones, PDF)
 - Fase 4: Cobros (pagos parciales, saldos)
 - Fase 5: Dashboard/reportes de caja

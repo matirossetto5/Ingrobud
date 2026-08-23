@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LoginPage } from '@/routes/LoginPage'
 import { DashboardPage } from '@/routes/DashboardPage'
+import { ClientesPage } from '@/routes/ClientesPage'
 import { PlaceholderPage } from '@/routes/PlaceholderPage'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -18,10 +19,7 @@ function App() {
           }
         >
           <Route path="/" element={<DashboardPage />} />
-          <Route
-            path="/clientes"
-            element={<PlaceholderPage title="Clientes" description="Alta, edición e historial de clientes." />}
-          />
+          <Route path="/clientes" element={<ClientesPage />} />
           <Route
             path="/presupuestos"
             element={<PlaceholderPage title="Presupuestos" description="Creación, envío y seguimiento de presupuestos." />}
