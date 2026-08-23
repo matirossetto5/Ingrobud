@@ -4,7 +4,7 @@ service firebase.storage {
   match /b/{bucket}/o {
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == 'matirossetto5@gmail.com';
+        && request.auth.token.email == 'rossetto.ing@gmail.com';
     }
 
     match /{allPaths=**} {
