@@ -5,7 +5,7 @@ import { ClientesPage } from '@/routes/ClientesPage'
 import { PresupuestosPage } from '@/routes/PresupuestosPage'
 import { PresupuestoFormPage } from '@/routes/PresupuestoFormPage'
 import { PresupuestoDetailPage } from '@/routes/PresupuestoDetailPage'
-import { PlaceholderPage } from '@/routes/PlaceholderPage'
+import { CobrosPage } from '@/routes/CobrosPage'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -27,10 +27,7 @@ function App() {
           <Route path="/presupuestos/nuevo" element={<PresupuestoFormPage />} />
           <Route path="/presupuestos/:id" element={<PresupuestoDetailPage />} />
           <Route path="/presupuestos/:id/editar" element={<PresupuestoFormPage />} />
-          <Route
-            path="/cobros"
-            element={<PlaceholderPage title="Cobros" description="Registro de pagos y saldos pendientes." />}
-          />
+          <Route path="/cobros" element={<CobrosPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

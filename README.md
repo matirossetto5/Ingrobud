@@ -66,21 +66,26 @@ firebase deploy --only firestore:rules,storage:rules
 - PWA instalable con la identidad de Ingroma
 - Reglas de seguridad de Firestore/Storage
 
-**Fase 2 (actual): Clientes (CRUD)** ✅
+**Fase 2: Clientes (CRUD)** ✅
 - Colección `clientes` en Firestore (nombre, empresa, email, teléfono, dirección, notas)
 - Listado con búsqueda por nombre/empresa
 - Alta y edición desde un modal
 - Baja con confirmación
 - Datos servidos con TanStack Query (`src/hooks/useClientes.ts`)
 
-**Fase 3 (actual): Presupuestos (ítems, secciones, PDF)** ✅
+**Fase 3: Presupuestos (ítems, secciones, PDF)** ✅
 - Colección `presupuestos` en Firestore, con numeración autoincremental (`counters/presupuestos`)
 - Alta y edición con secciones e ítems dinámicos (cantidad, precio unitario)
 - Listado con estado, cliente y total; vista de detalle
 - Exportación a PDF (`jspdf` + `jspdf-autotable`, cargado en un chunk aparte)
 
+**Fase 4 (actual): Cobros (pagos parciales, saldos)** ✅
+- Colección `pagos` en Firestore, asociados a un presupuesto y un cliente
+- Listado de presupuestos con total, cobrado y saldo pendiente (soporta pagos parciales)
+- Registro de pagos desde un modal (fecha, monto, método, notas) y baja con confirmación
+- Historial de pagos
+
 **Próximas fases**
-- Fase 4: Cobros (pagos parciales, saldos)
 - Fase 5: Dashboard/reportes de caja
 - Fase 6: Pulido PWA
 - Fase 7: Deploy
