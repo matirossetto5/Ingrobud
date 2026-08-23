@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Users, FileText, Wallet, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, Wallet, LogOut, Download, WifiOff } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
+import { useInstallPrompt } from '@/hooks/useInstallPrompt'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { cn } from '@/lib/utils'
 import icon from '@/assets/brand/icon-dark.png'
 
@@ -13,6 +15,8 @@ const navItems = [
 
 export function AppShell() {
   const logout = useAuthStore((s) => s.logout)
+  const { canInstall, promptInstall } = useInstallPrompt()
+  const online = useOnlineStatus()
 
   return (
     <div className="flex min-h-screen bg-muted">
@@ -39,6 +43,15 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
+        {canInstall && (
+          <button
+            onClick={() => promptInstall()}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Download className="h-4 w-4" />
+            Instalar app
+          </button>
+        )}
         <button
           onClick={() => logout()}
           className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -54,10 +67,24 @@ export function AppShell() {
             <img src={icon} alt="" className="h-7 w-7 rounded-md" />
             <span className="font-semibold">Ingroma</span>
           </div>
-          <button onClick={() => logout()} aria-label="Cerrar sesión">
-            <LogOut className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            {canInstall && (
+              <button onClick={() => promptInstall()} aria-label="Instalar app">
+                <Download className="h-5 w-5" />
+              </button>
+            )}
+            <button onClick={() => logout()} aria-label="Cerrar sesión">
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
         </header>
+
+        {!online && (
+          <div className="flex items-center justify-center gap-2 bg-muted px-4 py-1.5 text-xs text-muted-foreground">
+            <WifiOff className="h-3.5 w-3.5" />
+            Sin conexión — mostrando los últimos datos disponibles.
+          </div>
+        )}
 
         <main className="flex-1 p-4 sm:p-8">
           <Outlet />
