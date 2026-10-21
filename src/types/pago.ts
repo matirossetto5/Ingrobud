@@ -24,14 +24,19 @@ export interface Pago {
   montoBase: number
   /** Mes del índice CAC aplicado (`YYYY-MM`); vacío si no hubo actualización. */
   mesIndice: string
-  /** Índice del mes aplicado / índice del mes base. 1 si no hubo actualización. */
+  /** Índice del mes aplicado / índice del mes base (nunca menor que 1). 1 si no hubo actualización. */
   coeficiente: number
+  /** Valores de los índices usados, guardados para que el recibo no cambie si se corrige la tabla. */
+  indiceBase: number
+  indiceAplicado: number
   metodo: MetodoPago
   notas: string
+  /** Número correlativo de recibo. 0 en pagos viejos: se asigna al emitir el primer recibo. */
+  numeroRecibo: number
   createdAt: number
 }
 
-export type PagoInput = Omit<Pago, 'id' | 'createdAt'>
+export type PagoInput = Omit<Pago, 'id' | 'createdAt' | 'numeroRecibo'>
 
 export function metodoLabel(metodo: MetodoPago): string {
   return METODOS_PAGO.find((m) => m.value === metodo)?.label ?? metodo

@@ -119,18 +119,17 @@ export function nuevaSeccion(): PresupuestoSeccion {
 }
 
 export function emptyPresupuestoInput(): PresupuestoInput {
-  const hoy = new Date().toISOString().slice(0, 10)
   return {
     clienteId: '',
     clienteNombre: '',
-    fecha: hoy,
+    fecha: new Date().toISOString().slice(0, 10),
     validoHasta: '',
     estado: 'borrador',
     secciones: [nuevaSeccion()],
     notas: '',
     moneda: 'ARS',
-    // El último CAC publicado suele ser el del mes anterior.
-    mesBaseCac: mesAnterior(hoy),
+    // Se carga a mano: es el mes al que corresponden los precios cotizados.
+    mesBaseCac: '',
     etapasPago: [nuevaEtapa('Anticipo', 50), nuevaEtapa('Al finalizar el trabajo', 50)],
   }
 }

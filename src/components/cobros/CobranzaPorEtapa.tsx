@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { PagoFormDialog } from '@/components/cobros/PagoFormDialog'
 import { DetalleMontoPago } from '@/components/cobros/DetalleMontoPago'
+import { ReciboButton } from '@/components/cobros/ReciboButton'
 
 /** Avance de cobro de cada etapa del plan de pagos, con lo pendiente actualizado por CAC. */
 export function CobranzaPorEtapa({ presupuesto }: { presupuesto: Presupuesto }) {
@@ -115,7 +116,10 @@ export function CobranzaPorEtapa({ presupuesto }: { presupuesto: Presupuesto }) 
                       {formatDate(pago.fecha)} · {metodoLabel(pago.metodo)}
                     </span>
                   </div>
-                  <DetalleMontoPago pago={pago} />
+                  <div className="flex items-center gap-2">
+                    <DetalleMontoPago pago={pago} />
+                    <ReciboButton pago={pago} presupuesto={presupuesto} pagos={pagos ?? []} />
+                  </div>
                 </div>
               ))}
             </div>

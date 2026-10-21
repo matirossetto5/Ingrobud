@@ -23,6 +23,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { MontosPorMoneda } from '@/components/MontosPorMoneda'
 import { PagoFormDialog } from '@/components/cobros/PagoFormDialog'
 import { DetalleMontoPago } from '@/components/cobros/DetalleMontoPago'
+import { ReciboButton } from '@/components/cobros/ReciboButton'
+import { formatNumeroRecibo } from '@/lib/reciboPdf'
 
 export function CobrosPage() {
   const { data: presupuestos, isLoading: loadingPresupuestos } = usePresupuestos()
@@ -168,6 +170,7 @@ export function CobrosPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
+                  <TableHead>Recibo</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Presupuesto / etapa</TableHead>
                   <TableHead>Método</TableHead>
@@ -181,6 +184,9 @@ export function CobrosPage() {
                   return (
                     <TableRow key={pago.id}>
                       <TableCell className="text-muted-foreground">{formatDate(pago.fecha)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {pago.numeroRecibo ? formatNumeroRecibo(pago.numeroRecibo) : '—'}
+                      </TableCell>
                       <TableCell>{pago.clienteNombre || '—'}</TableCell>
                       <TableCell className="text-muted-foreground">
                         N° {presupuesto?.numero ?? '—'}
@@ -191,15 +197,18 @@ export function CobrosPage() {
                         <DetalleMontoPago pago={pago} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Eliminar pago"
-                          onClick={() => handleDeletePago(pago.id)}
-                          disabled={deletePago.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <ReciboButton pago={pago} presupuesto={presupuesto} pagos={pagos} />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Eliminar pago"
+                            onClick={() => handleDeletePago(pago.id)}
+                            disabled={deletePago.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )

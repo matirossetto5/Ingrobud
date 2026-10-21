@@ -146,19 +146,28 @@ repo hasta que estés conforme.
   de Cobros, Dashboard y ficha separados por moneda
 - Plan de pagos por etapas (anticipo, etapas intermedias, final) cargando % o monto; los porcentajes
   tienen que sumar 100%
-- Mes base de la cotización (ARS) y pantalla **Índices CAC** (`indicesCac/{YYYY-MM}`) para cargar el
-  índice mensual (nivel general)
+- Mes base de la cotización (ARS), cargado a mano, y pantalla **Índices CAC** (`indicesCac/{YYYY-MM}`)
+  para cargar a mano el índice mensual (nivel general)
 - Cada pago cancela un monto **a valores base** y se cobra actualizado:
-  `cobrado = base × CAC(mes aplicado) / CAC(mes base)`. Por defecto se aplica el índice del mes anterior
-  al pago (el último publicado), editable; si el mes aplicado no es posterior al base no hay actualización.
-  Lo ya cobrado queda congelado y solo lo pendiente se sigue actualizando
+  `cobrado = base × máx(1, CAC(mes aplicado) / CAC(mes base))`. El mes del índice aplicado se elige a mano
+  en cada pago y el monto nunca queda por debajo del base. Lo ya cobrado queda congelado y solo lo
+  pendiente se sigue actualizando
 - Cobranza por etapa en el detalle del presupuesto (cancelado, pendiente y pendiente actualizado al
   último CAC), con registro de pago por etapa
 - PDF con tabla de forma de pago y cláusula de moneda/actualización
 - Pagos y presupuestos anteriores siguen funcionando: se toman como pesos sin actualización
 
+**Fase 10 (actual): Recibos de pago** ✅
+- Recibo en PDF por pago con número correlativo (`counters/recibos`, asignado al registrar el pago en la
+  misma transacción; los pagos anteriores reciben número al emitir su primer recibo)
+- Monto en letras, concepto (etapa y presupuesto), forma de pago, detalle de la actualización CAC
+  (monto base, índices, coeficiente) y estado de cuenta del presupuesto después del pago
+- "Registrar y emitir recibo" al cargar el pago, y descarga desde Cobros, la cobranza del presupuesto y
+  la ficha del cliente
+- Cada pago guarda los valores de índice usados, así el recibo no cambia si después se corrige la tabla
+
 **Próximas fases**
-- Fase 10: Deploy
+- Fase 11: Deploy
 
 ## Despliegue (a definir)
 

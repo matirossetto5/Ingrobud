@@ -4,8 +4,9 @@ import { useCreatePago } from '@/hooks/usePagos'
 import { useIndicesCac } from '@/hooks/useIndicesCac'
 import { calcularActualizacion } from '@/lib/indicesCac'
 import { calcularResumenCobros, calcularResumenEtapas } from '@/lib/cobros'
-import { actualizaPorCac, mesAnterior, type Presupuesto } from '@/types/presupuesto'
+import { actualizaPorCac, type Presupuesto } from '@/types/presupuesto'
 import { METODOS_PAGO, type MetodoPago, type Pago, type PagoInput } from '@/types/pago'
+import { generarReciboPdf } from '@/lib/reciboPdf'
 import { formatCurrency, formatMes } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -88,22 +89,16 @@ function PagoForm({
   const [etapaId, setEtapaId] = useState(etapaPorDefecto)
   const [montoBase, setMontoBase] = useState(() => redondear2(pendienteDe(etapaPorDefecto)))
   const [actualizar, setActualizar] = useState(actualizaPorCac(presupuesto))
-  const [mesIndice, setMesIndice] = useState(mesAnterior(hoy))
-  const [mesIndiceManual, setMesIndiceManual] = useState(false)
+  // El mes del índice aplicado se elige a mano en cada pago.
+  const [mesIndice, setMesIndice] = useState('')
   const [metodo, setMetodo] = useState<MetodoPago>('transferencia')
   const [notas, setNotas] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const actualizacion = actualizar ? calcularActualizacion(indices ?? [], presupuesto.mesBaseCac, mesIndice) : null
+  const actualizacion = actualizar && mesIndice ? calcularActualizacion(indices ?? [], presupuesto.mesBaseCac, mesIndice) : null
   const faltaIndice = actualizar && !actualizacion
   const coeficiente = actualizar ? (actualizacion?.coeficiente ?? 1) : 1
   const monto = redondear2(montoBase * coeficiente)
-
-  function cambiarFecha(value: string) {
-    setFecha(value)
-    // El índice por defecto es el del mes anterior al pago (el último publicado).
-    if (!mesIndiceManual && value) setMesIndice(mesAnterior(value))
-  }
 
   function cambiarEtapa(value: string) {
     if (!value) return
@@ -113,8 +108,13 @@ function PagoForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    const conRecibo = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('name') === 'conRecibo'
     if (!montoBase || montoBase <= 0) {
       setError('Ingresá un monto válido.')
+      return
+    }
+    if (actualizar && !mesIndice) {
+      setError('Elegí el mes del índice CAC a aplicar, o desmarcá la actualización.')
       return
     }
     if (faltaIndice) {
@@ -131,16 +131,25 @@ function PagoForm({
       moneda: presupuesto.moneda,
       etapaId: etapaId === SIN_ETAPA ? '' : etapaId,
       montoBase: redondear2(montoBase),
-      mesIndice: actualizar && coeficiente !== 1 ? mesIndice : '',
+      mesIndice: actualizar ? mesIndice : '',
       coeficiente,
+      indiceBase: actualizar ? (actualizacion?.indiceBase ?? 0) : 0,
+      indiceAplicado: actualizar ? (actualizacion?.indiceAplicado ?? 0) : 0,
       metodo,
       notas,
     }
+    let nuevo
     try {
-      await createPago.mutateAsync(input)
-      onDone()
+      nuevo = await createPago.mutateAsync(input)
     } catch {
       setError('No se pudo registrar el pago. Intentá de nuevo.')
+      return
+    }
+    onDone()
+    if (conRecibo) {
+      await generarReciboPdf({ pago: nuevo, presupuesto, pagos: [...pagos, nuevo] }).catch(() =>
+        window.alert('El pago se registró, pero no se pudo generar el recibo. Podés descargarlo desde el historial.'),
+      )
     }
   }
 
@@ -165,7 +174,7 @@ function PagoForm({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="fecha">Fecha del pago</Label>
-          <Input id="fecha" type="date" value={fecha} onChange={(e) => cambiarFecha(e.target.value)} />
+          <Input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
         </div>
       </div>
 
@@ -188,21 +197,20 @@ function PagoForm({
                     id="mesIndice"
                     type="month"
                     value={mesIndice}
-                    onChange={(e) => {
-                      setMesIndice(e.target.value)
-                      setMesIndiceManual(true)
-                    }}
+                    onChange={(e) => setMesIndice(e.target.value)}
                   />
                 </div>
               </div>
-              {actualizacion ? (
+              {!mesIndice ? (
+                <p className="text-xs text-muted-foreground">Elegí el mes del índice CAC a aplicar.</p>
+              ) : actualizacion ? (
                 <p className="text-xs text-muted-foreground">
                   CAC base {actualizacion.indiceBase.toLocaleString('es-AR')} → CAC aplicado{' '}
                   {actualizacion.indiceAplicado.toLocaleString('es-AR')} · coeficiente{' '}
                   <span className="font-medium text-foreground">
                     {coeficiente.toLocaleString('es-AR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                   </span>
-                  {coeficiente === 1 && ' (sin variación: el mes aplicado no es posterior al base)'}
+                  {coeficiente === 1 && ' (sin actualización: el monto nunca queda por debajo del base)'}
                 </p>
               ) : (
                 <p className="text-xs text-destructive">
@@ -274,8 +282,11 @@ function PagoForm({
         <Button type="button" variant="outline" onClick={onDone}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={createPago.isPending}>
-          {createPago.isPending ? 'Guardando…' : `Registrar ${money(monto)}`}
+        <Button type="submit" variant="outline" disabled={createPago.isPending}>
+          Solo registrar
+        </Button>
+        <Button type="submit" name="conRecibo" disabled={createPago.isPending}>
+          {createPago.isPending ? 'Guardando…' : `Registrar ${money(monto)} y emitir recibo`}
         </Button>
       </DialogFooter>
     </form>

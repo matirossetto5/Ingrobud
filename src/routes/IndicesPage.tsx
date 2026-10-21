@@ -14,7 +14,7 @@ export function IndicesPage() {
   const saveIndice = useSaveIndiceCac()
   const deleteIndice = useDeleteIndiceCac()
 
-  const [mes, setMes] = useState(() => mesAnterior(new Date().toISOString().slice(0, 10)))
+  const [mes, setMes] = useState('')
   const [valor, setValor] = useState('')
   const [error, setError] = useState<string | null>(null)
 

@@ -17,6 +17,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
 import { MontosPorMoneda } from '@/components/MontosPorMoneda'
 import { DetalleMontoPago } from '@/components/cobros/DetalleMontoPago'
+import { ReciboButton } from '@/components/cobros/ReciboButton'
 
 export function ClienteDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -218,6 +219,7 @@ export function ClienteDetailPage() {
                   <TableHead>Método</TableHead>
                   <TableHead>Notas</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-right">Recibo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -229,6 +231,13 @@ export function ClienteDetailPage() {
                     <TableCell className="text-muted-foreground">{pago.notas || '—'}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <DetalleMontoPago pago={pago} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <ReciboButton
+                        pago={pago}
+                        presupuesto={presupuestosCliente.find((p) => p.id === pago.presupuestoId)}
+                        pagos={pagosCliente}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

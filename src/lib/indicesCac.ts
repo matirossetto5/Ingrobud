@@ -32,8 +32,8 @@ export interface Actualizacion {
 }
 
 /**
- * Coeficiente de actualización entre el mes base y el mes aplicado. Si el mes aplicado no es
- * posterior al base no hay actualización (coeficiente 1). Devuelve null si falta algún índice.
+ * Coeficiente de actualización entre el mes base y el mes aplicado. Nunca es menor que 1: si el
+ * índice aplicado no supera al base, se mantiene el valor base. Devuelve null si falta algún índice.
  */
 export function calcularActualizacion(
   indices: IndiceCac[],
@@ -42,8 +42,7 @@ export function calcularActualizacion(
 ): Actualizacion | null {
   const indiceBase = indices.find((i) => i.mes === mesBase)?.valor
   if (!indiceBase) return null
-  if (mesAplicado <= mesBase) return { coeficiente: 1, indiceBase, indiceAplicado: indiceBase }
   const indiceAplicado = indices.find((i) => i.mes === mesAplicado)?.valor
   if (!indiceAplicado) return null
-  return { coeficiente: indiceAplicado / indiceBase, indiceBase, indiceAplicado }
+  return { coeficiente: Math.max(1, indiceAplicado / indiceBase), indiceBase, indiceAplicado }
 }
