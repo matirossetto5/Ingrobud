@@ -30,11 +30,42 @@ export interface Presupuesto {
   estado: EstadoPresupuesto
   secciones: PresupuestoSeccion[]
   notas: string
+  /** Revisión vigente: 0 es la versión original, cada nueva revisión suma 1. */
+  revision: number
+  /** Motivo de la revisión vigente (vacío en la revisión 0). */
+  motivoRevision: string
   createdAt: number
   updatedAt: number
 }
 
-export type PresupuestoInput = Omit<Presupuesto, 'id' | 'numero' | 'createdAt' | 'updatedAt'>
+export type PresupuestoInput = Omit<
+  Presupuesto,
+  'id' | 'numero' | 'revision' | 'motivoRevision' | 'createdAt' | 'updatedAt'
+>
+
+/** Copia congelada de una revisión anterior, guardada en `presupuestos/{id}/revisiones/{revision}`. */
+export interface PresupuestoRevision {
+  revision: number
+  motivoRevision: string
+  clienteNombre: string
+  fecha: string
+  validoHasta: string
+  estado: EstadoPresupuesto
+  secciones: PresupuestoSeccion[]
+  notas: string
+  /** Momento en que esta revisión fue reemplazada por la siguiente. */
+  archivadaEn: number
+}
+
+/** Lo mínimo que hace falta para mostrar o exportar una versión (vigente o archivada). */
+export type PresupuestoVersion = Pick<
+  Presupuesto,
+  'numero' | 'revision' | 'clienteNombre' | 'fecha' | 'validoHasta' | 'estado' | 'secciones' | 'notas'
+>
+
+export function revisionLabel(revision: number): string {
+  return `Rev. ${revision}`
+}
 
 export function nuevoItem(): PresupuestoItem {
   return { id: crypto.randomUUID(), descripcion: '', cantidad: 1, precioUnitario: 0 }

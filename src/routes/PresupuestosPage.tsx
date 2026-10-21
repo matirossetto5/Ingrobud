@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Plus, FileDown, Pencil, Trash2, Eye } from 'lucide-react'
 import { usePresupuestos, useDeletePresupuesto } from '@/hooks/usePresupuestos'
-import { calcularTotalPresupuesto, estadoBadgeVariant, estadoLabel } from '@/types/presupuesto'
+import { calcularTotalPresupuesto, estadoBadgeVariant, estadoLabel, revisionLabel } from '@/types/presupuesto'
 import type { Presupuesto } from '@/types/presupuesto'
 import { generarPresupuestoPdf } from '@/lib/presupuestoPdf'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -66,7 +66,14 @@ export function PresupuestosPage() {
             <TableBody>
               {presupuestos.map((presupuesto) => (
                 <TableRow key={presupuesto.id}>
-                  <TableCell className="font-medium">{presupuesto.numero}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">
+                    {presupuesto.numero}
+                    {presupuesto.revision > 0 && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {revisionLabel(presupuesto.revision)}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{presupuesto.clienteNombre || '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(presupuesto.fecha)}</TableCell>
                   <TableCell>

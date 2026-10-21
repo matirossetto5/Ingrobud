@@ -1,11 +1,11 @@
 import type { jsPDF } from 'jspdf'
-import type { Presupuesto } from '@/types/presupuesto'
-import { calcularSubtotalSeccion, calcularTotalPresupuesto, estadoLabel } from '@/types/presupuesto'
+import type { PresupuestoVersion } from '@/types/presupuesto'
+import { calcularSubtotalSeccion, calcularTotalPresupuesto, estadoLabel, revisionLabel } from '@/types/presupuesto'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 type JsPdfWithAutoTable = jsPDF & { lastAutoTable: { finalY: number } }
 
-export async function generarPresupuestoPdf(presupuesto: Presupuesto): Promise<void> {
+export async function generarPresupuestoPdf(presupuesto: PresupuestoVersion): Promise<void> {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
   const doc = new jsPDF() as JsPdfWithAutoTable
   const marginX = 14
@@ -16,7 +16,7 @@ export async function generarPresupuestoPdf(presupuesto: Presupuesto): Promise<v
   doc.text('Ingroma', marginX, cursorY)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Presupuesto N° ${presupuesto.numero}`, 210 - marginX, cursorY, { align: 'right' })
+  doc.text(`Presupuesto N° ${presupuesto.numero} — ${revisionLabel(presupuesto.revision)}`, 210 - marginX, cursorY, { align: 'right' })
 
   cursorY += 10
   doc.setFontSize(10)
@@ -75,5 +75,5 @@ export async function generarPresupuestoPdf(presupuesto: Presupuesto): Promise<v
     doc.text(lines, marginX, cursorY)
   }
 
-  doc.save(`presupuesto-${presupuesto.numero}.pdf`)
+  doc.save(`presupuesto-${presupuesto.numero}-rev${presupuesto.revision}.pdf`)
 }

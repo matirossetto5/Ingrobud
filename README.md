@@ -122,8 +122,17 @@ repo hasta que estés conforme.
 - Banner de "sin conexión" cuando se pierde la red
 - `navigateFallback` a `index.html` para navegación offline y metatags iOS (`apple-mobile-web-app-*`)
 
+**Fase 7 (actual): Revisiones de presupuestos** ✅
+- Cada presupuesto tiene una revisión vigente (`Rev. 0` es la original) y un historial de versiones anteriores
+- "Nueva revisión" (desde el detalle) pide el motivo, archiva la versión vigente tal cual en
+  `presupuestos/{id}/revisiones/{n}` y abre la siguiente como borrador para editarla
+- Historial con fecha, estado, motivo y total de cada revisión; las anteriores se pueden ver (solo lectura)
+  y descargar en PDF
+- El PDF y el listado muestran el número de revisión (`presupuesto-12-rev1.pdf`)
+- Al eliminar un presupuesto se borra también su historial
+
 **Próximas fases**
-- Fase 7: Deploy
+- Fase 8: Deploy
 
 ## Despliegue (a definir)
 

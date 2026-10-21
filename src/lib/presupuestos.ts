@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -10,13 +9,15 @@ import {
   runTransaction,
   serverTimestamp,
   updateDoc,
+  writeBatch,
   type DocumentData,
   type DocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { Presupuesto, PresupuestoInput } from '@/types/presupuesto'
+import type { Presupuesto, PresupuestoInput, PresupuestoRevision } from '@/types/presupuesto'
 
 const COLLECTION = 'presupuestos'
+const REVISIONES = 'revisiones'
 
 function requireDb() {
   if (!db) throw new Error('Firebase no está configurado.')
@@ -36,8 +37,26 @@ function fromDoc(snap: DocumentSnapshot<DocumentData>): Presupuesto {
     estado: data.estado ?? 'borrador',
     secciones: data.secciones ?? [],
     notas: data.notas ?? '',
+    revision: data.revision ?? 0,
+    motivoRevision: data.motivoRevision ?? '',
     createdAt: data.createdAt?.toMillis?.() ?? 0,
     updatedAt: data.updatedAt?.toMillis?.() ?? 0,
+  }
+}
+
+function revisionFromDoc(snap: DocumentSnapshot<DocumentData>): PresupuestoRevision {
+  const data = snap.data()
+  if (!data) throw new Error('La revisión no existe.')
+  return {
+    revision: data.revision ?? 0,
+    motivoRevision: data.motivoRevision ?? '',
+    clienteNombre: data.clienteNombre ?? '',
+    fecha: data.fecha ?? '',
+    validoHasta: data.validoHasta ?? '',
+    estado: data.estado ?? 'borrador',
+    secciones: data.secciones ?? [],
+    notas: data.notas ?? '',
+    archivadaEn: data.archivadaEn?.toMillis?.() ?? 0,
   }
 }
 
@@ -68,6 +87,8 @@ export async function createPresupuesto(input: PresupuestoInput): Promise<string
   const ref = await addDoc(collection(database, COLLECTION), {
     ...input,
     numero,
+    revision: 0,
+    motivoRevision: '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
@@ -81,6 +102,52 @@ export async function updatePresupuesto(id: string, input: PresupuestoInput): Pr
   })
 }
 
+/**
+ * Archiva la versión vigente en `revisiones/{n}` y abre la revisión n+1 como borrador,
+ * con el mismo contenido para que se pueda editar a partir de ahí.
+ */
+export async function crearRevision(presupuesto: Presupuesto, motivo: string): Promise<void> {
+  const database = requireDb()
+  const ref = doc(database, COLLECTION, presupuesto.id)
+  const batch = writeBatch(database)
+  batch.set(doc(ref, REVISIONES, String(presupuesto.revision)), {
+    revision: presupuesto.revision,
+    motivoRevision: presupuesto.motivoRevision,
+    clienteNombre: presupuesto.clienteNombre,
+    fecha: presupuesto.fecha,
+    validoHasta: presupuesto.validoHasta,
+    estado: presupuesto.estado,
+    secciones: presupuesto.secciones,
+    notas: presupuesto.notas,
+    archivadaEn: serverTimestamp(),
+  })
+  batch.update(ref, {
+    revision: presupuesto.revision + 1,
+    motivoRevision: motivo,
+    estado: 'borrador',
+    fecha: new Date().toISOString().slice(0, 10),
+    updatedAt: serverTimestamp(),
+  })
+  await batch.commit()
+}
+
+export async function getRevisiones(presupuestoId: string): Promise<PresupuestoRevision[]> {
+  const snap = await getDocs(
+    query(collection(requireDb(), COLLECTION, presupuestoId, REVISIONES), orderBy('revision', 'desc')),
+  )
+  return snap.docs.map(revisionFromDoc)
+}
+
+export async function getRevision(presupuestoId: string, revision: number): Promise<PresupuestoRevision | null> {
+  const snap = await getDoc(doc(requireDb(), COLLECTION, presupuestoId, REVISIONES, String(revision)))
+  return snap.exists() ? revisionFromDoc(snap) : null
+}
+
 export async function deletePresupuesto(id: string): Promise<void> {
-  await deleteDoc(doc(requireDb(), COLLECTION, id))
+  const database = requireDb()
+  const revisiones = await getDocs(collection(database, COLLECTION, id, REVISIONES))
+  const batch = writeBatch(database)
+  revisiones.docs.forEach((r) => batch.delete(r.ref))
+  batch.delete(doc(database, COLLECTION, id))
+  await batch.commit()
 }

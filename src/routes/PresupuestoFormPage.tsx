@@ -12,6 +12,7 @@ import {
   nuevoItem,
   type PresupuestoInput,
   type PresupuestoSeccion,
+  revisionLabel,
 } from '@/types/presupuesto'
 import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,7 @@ export function PresupuestoFormPage() {
   }
 
   function updateCliente(clienteId: string) {
+    if (!clienteId) return
     const cliente = clientes?.find((c) => c.id === clienteId)
     setForm((f) => ({ ...f, clienteId, clienteNombre: cliente?.nombre ?? '' }))
   }
@@ -133,9 +135,24 @@ export function PresupuestoFormPage() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">{isEdit ? 'Editar presupuesto' : 'Nuevo presupuesto'}</h1>
+        <h1 className="text-2xl font-semibold">
+          {isEdit && presupuesto
+            ? `Editar presupuesto N° ${presupuesto.numero} — ${revisionLabel(presupuesto.revision)}`
+            : 'Nuevo presupuesto'}
+        </h1>
         <p className="text-muted-foreground">Armá el presupuesto por secciones e ítems.</p>
       </div>
+
+      {presupuesto && presupuesto.estado !== 'borrador' && (
+        <Card>
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            Este presupuesto ya está <span className="font-medium text-foreground">{presupuesto.estado}</span>. Si
+            vas a cambiar el contenido que vio el cliente, conviene crear una{' '}
+            <span className="font-medium text-foreground">nueva revisión</span> desde el detalle, así la versión
+            presentada queda guardada en el historial.
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="grid gap-4 p-6 sm:grid-cols-2">
@@ -156,7 +173,8 @@ export function PresupuestoFormPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="estado">Estado</Label>
-            <Select value={form.estado} onValueChange={(v) => update('estado', v as PresupuestoInput['estado'])}>
+            {/* Radix Select emite '' cuando `value` cambia desde afuera (p. ej. al refrescar tras crear una revisión). */}
+            <Select value={form.estado} onValueChange={(v) => v && update('estado', v as PresupuestoInput['estado'])}>
               <SelectTrigger id="estado">
                 <SelectValue />
               </SelectTrigger>
