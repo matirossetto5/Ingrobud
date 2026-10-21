@@ -2,8 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
 import { usePagos, useCreatePago, useDeletePago } from '@/hooks/usePagos'
-import { calcularResumenCobros, type ResumenCobro } from '@/lib/cobros'
+import { calcularResumenCobros, esCobrable, saldoPendiente, type ResumenCobro } from '@/lib/cobros'
 import { METODOS_PAGO, metodoLabel, type MetodoPago, type PagoInput } from '@/types/pago'
+import { estadoLabel } from '@/types/presupuesto'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,12 +31,14 @@ export function CobrosPage() {
   const [dialogPresupuestoId, setDialogPresupuestoId] = useState<string | null>(null)
 
   const isLoading = loadingPresupuestos || loadingPagos
+  // Se listan los aprobados y, para no perder historial, los que ya tienen pagos aunque hoy no estén
+  // aprobados (p. ej. un presupuesto cobrado parcialmente que pasó a una nueva revisión en borrador).
   const resumen = calcularResumenCobros(presupuestos ?? [], pagos ?? [])
-    .filter((r) => r.total > 0)
-    .sort((a, b) => b.saldo - a.saldo)
+    .filter((r) => (esCobrable(r) && r.total > 0) || r.cobrado > 0)
+    .sort((a, b) => saldoPendiente(b) - saldoPendiente(a))
 
   const totalCobrado = resumen.reduce((sum, r) => sum + r.cobrado, 0)
-  const totalPendiente = resumen.reduce((sum, r) => sum + Math.max(r.saldo, 0), 0)
+  const totalPendiente = resumen.reduce((sum, r) => sum + saldoPendiente(r), 0)
 
   async function handleDeletePago(pagoId: string) {
     if (!window.confirm('¿Eliminar este pago? Esta acción no se puede deshacer.')) return
@@ -75,7 +78,7 @@ export function CobrosPage() {
       ) : resumen.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No hay presupuestos con montos para cobrar todavía.
+            No hay presupuestos aprobados para cobrar todavía.
           </CardContent>
         </Card>
       ) : (
@@ -99,7 +102,7 @@ export function CobrosPage() {
                   <TableCell className="text-muted-foreground">{r.presupuesto.clienteNombre || '—'}</TableCell>
                   <TableCell className="text-right">{formatCurrency(r.total)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(r.cobrado)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(Math.max(r.saldo, 0))}</TableCell>
+                  <TableCell className="text-right">{esCobrable(r) ? formatCurrency(saldoPendiente(r)) : '—'}</TableCell>
                   <TableCell>
                     <EstadoCobroBadge resumen={r} />
                   </TableCell>
@@ -107,7 +110,7 @@ export function CobrosPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={r.saldo <= 0}
+                      disabled={saldoPendiente(r) <= 0}
                       onClick={() => setDialogPresupuestoId(r.presupuesto.id)}
                     >
                       <Plus className="h-4 w-4" />
@@ -182,6 +185,7 @@ export function CobrosPage() {
 }
 
 function EstadoCobroBadge({ resumen }: { resumen: ResumenCobro }) {
+  if (!esCobrable(resumen)) return <Badge variant="default">{estadoLabel(resumen.presupuesto.estado)}</Badge>
   if (resumen.saldo <= 0) return <Badge variant="success">Pagado</Badge>
   if (resumen.cobrado > 0) return <Badge variant="primary">Parcial</Badge>
   return <Badge variant="default">Pendiente</Badge>

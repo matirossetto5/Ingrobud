@@ -17,3 +17,12 @@ export function calcularResumenCobros(presupuestos: Presupuesto[], pagos: Pago[]
     return { presupuesto, total, cobrado, saldo: total - cobrado }
   })
 }
+
+/** Solo un presupuesto aprobado genera deuda: borradores, enviados y rechazados no se cobran. */
+export function esCobrable(resumen: ResumenCobro): boolean {
+  return resumen.presupuesto.estado === 'aprobado'
+}
+
+export function saldoPendiente(resumen: ResumenCobro): number {
+  return esCobrable(resumen) ? Math.max(resumen.saldo, 0) : 0
+}

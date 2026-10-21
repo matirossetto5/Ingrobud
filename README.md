@@ -137,6 +137,9 @@ repo hasta que estés conforme.
 - "Nuevo presupuesto" desde la ficha llega con el cliente ya elegido (`/presupuestos/nuevo?cliente=<id>`)
 - PDF rediseñado: logo, datos de contacto de la empresa (`src/lib/empresa.ts`), recuadro con los datos
   completos del cliente, total destacado, pie con firma profesional y numeración de páginas
+- Saldos pendientes (Cobros, Dashboard y ficha) cuentan solo presupuestos **aprobados**
+  (`esCobrable`/`saldoPendiente` en `src/lib/cobros.ts`). Un presupuesto con pagos que deja de estar
+  aprobado (p. ej. pasa a una nueva revisión en borrador) sigue listado en Cobros, sin sumar al pendiente
 
 **Próximas fases**
 - Fase 9: Deploy

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
 import { usePagos } from '@/hooks/usePagos'
-import { calcularResumenCobros } from '@/lib/cobros'
+import { calcularResumenCobros, saldoPendiente } from '@/lib/cobros'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { estadoBadgeVariant, estadoLabel } from '@/types/presupuesto'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,12 +23,12 @@ export function DashboardPage() {
     .reduce((sum, pago) => sum + pago.monto, 0)
 
   const resumen = calcularResumenCobros(presupuestos ?? [], pagos ?? [])
-  const pendienteDeCobro = resumen.reduce((sum, r) => sum + Math.max(r.saldo, 0), 0)
+  const pendienteDeCobro = resumen.reduce((sum, r) => sum + saldoPendiente(r), 0)
   const presupuestosEnviados = (presupuestos ?? []).filter((p) => p.estado === 'enviado').length
 
   const pendientes = resumen
-    .filter((r) => r.saldo > 0)
-    .sort((a, b) => b.saldo - a.saldo)
+    .filter((r) => saldoPendiente(r) > 0)
+    .sort((a, b) => saldoPendiente(b) - saldoPendiente(a))
     .slice(0, 5)
 
   const ultimosPagos = (pagos ?? []).slice(0, 5)

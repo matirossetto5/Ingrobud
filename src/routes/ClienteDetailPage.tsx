@@ -4,7 +4,7 @@ import { ArrowLeft, Building2, Eye, Mail, MapPin, Pencil, Phone, Plus } from 'lu
 import { useCliente, useUpdateCliente } from '@/hooks/useClientes'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
 import { usePagos } from '@/hooks/usePagos'
-import { calcularResumenCobros } from '@/lib/cobros'
+import { calcularResumenCobros, esCobrable, saldoPendiente } from '@/lib/cobros'
 import { estadoBadgeVariant, estadoLabel, revisionLabel } from '@/types/presupuesto'
 import { metodoLabel } from '@/types/pago'
 import type { ClienteInput } from '@/types/cliente'
@@ -43,11 +43,10 @@ export function ClienteDetailPage() {
   const presupuestosCliente = (presupuestos ?? []).filter((p) => p.clienteId === cliente.id)
   const pagosCliente = (pagos ?? []).filter((p) => p.clienteId === cliente.id)
   const resumen = calcularResumenCobros(presupuestosCliente, pagosCliente)
-  // Solo lo aprobado es trabajo comprometido: borradores, enviados y rechazados no generan deuda.
-  const aprobados = resumen.filter((r) => r.presupuesto.estado === 'aprobado')
+  const aprobados = resumen.filter(esCobrable)
   const totalAprobado = aprobados.reduce((sum, r) => sum + r.total, 0)
   const totalCobrado = pagosCliente.reduce((sum, p) => sum + p.monto, 0)
-  const saldoPendiente = aprobados.reduce((sum, r) => sum + Math.max(r.saldo, 0), 0)
+  const totalPendiente = aprobados.reduce((sum, r) => sum + saldoPendiente(r), 0)
   const numeroPorPresupuesto = new Map(presupuestosCliente.map((p) => [p.id, p.numero]))
 
   async function handleSubmit(input: ClienteInput) {
@@ -133,7 +132,7 @@ export function ClienteDetailPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Saldo pendiente</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatCurrency(saldoPendiente)}</p>
+            <p className="text-2xl font-semibold">{formatCurrency(totalPendiente)}</p>
             <p className="text-xs text-muted-foreground">De presupuestos aprobados</p>
           </CardContent>
         </Card>
@@ -179,7 +178,7 @@ export function ClienteDetailPage() {
                     <TableCell className="text-right whitespace-nowrap">{formatCurrency(total)}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">{formatCurrency(cobrado)}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {presupuesto.estado === 'aprobado' ? formatCurrency(saldo) : '—'}
+                      {esCobrable({ presupuesto, total, cobrado, saldo }) ? formatCurrency(saldo) : '—'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" aria-label="Ver presupuesto" asChild>
