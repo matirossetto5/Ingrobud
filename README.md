@@ -169,7 +169,33 @@ repo hasta que estés conforme.
 **Próximas fases**
 - Fase 11: Deploy
 
-## Despliegue (a definir)
+## Despliegue
 
-Pendiente de decidir entre Firebase Hosting, Vercel o Netlify. La app es un SPA estático
-(`npm run build` genera `dist/`), así que cualquiera de las tres opciones funciona sin cambios.
+- **App (frontend):** Netlify, proyecto `ingrobud` → https://ingrobud.netlify.app
+- **Base de datos y login:** Firebase (Auth + Firestore + Storage), proyecto `ingrobud`
+
+### Netlify
+
+La configuración está en `netlify.toml`: build `npm run build`, publica `dist/`, Node 22, regla de SPA
+(`/* → /index.html 200`, necesaria para recargar rutas como `/presupuestos/<id>`) y headers de caché
+para que las actualizaciones de la PWA lleguen enseguida.
+
+En Netlify (Project configuration):
+1. **Build & deploy → Continuous deployment → Branches:** branch de producción `main`.
+2. **Environment variables:** `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
+   `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`,
+   `VITE_FIREBASE_APP_ID` (los valores del paso 2 del setup). **No** definir `VITE_USE_FIREBASE_EMULATOR`.
+   Si se cambia alguna, hay que volver a deployar (Vite las incrusta en el build).
+
+Cada push a `main` dispara un deploy.
+
+### Firebase
+
+1. **Authentication → Settings → Authorized domains:** agregar `ingrobud.netlify.app` (y el dominio
+   propio, si se usa uno). Sin esto el login falla en producción.
+2. **Reglas de seguridad:** desplegarlas cada vez que cambien `firestore.rules` o `storage.rules`:
+   ```bash
+   firebase deploy --only firestore:rules,storage:rules
+   ```
+   Las reglas permiten todo solo al email admin, así que cubren las colecciones nuevas
+   (`indicesCac`, `counters/recibos`, `presupuestos/*/revisiones`) sin cambios.
