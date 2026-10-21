@@ -7,6 +7,13 @@ import {
 } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from '@/lib/firebase'
 
+// Único usuario con acceso a la app (debe coincidir con firestore.rules y storage.rules).
+export const ADMIN_EMAIL = 'matirossetto@msn.com'
+
+function isAdmin(user: User | null): user is User {
+  return user?.email?.toLowerCase() === ADMIN_EMAIL
+}
+
 interface AuthState {
   user: User | null
   status: 'loading' | 'authenticated' | 'unauthenticated' | 'unconfigured'
@@ -23,7 +30,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (!auth) return
     set({ error: null })
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      if (email.trim().toLowerCase() !== ADMIN_EMAIL) throw new Error('not-admin')
+      await signInWithEmailAndPassword(auth, email.trim(), password)
     } catch {
       set({ error: 'Email o contraseña incorrectos.' })
       throw new Error('auth/invalid-credentials')
@@ -37,6 +45,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 if (isFirebaseConfigured && auth) {
   onAuthStateChanged(auth, (user) => {
+    if (user && !isAdmin(user)) {
+      // Cualquier sesión que no sea la del admin se cierra.
+      void signOut(auth!)
+      return
+    }
     useAuthStore.setState({
       user,
       status: user ? 'authenticated' : 'unauthenticated',

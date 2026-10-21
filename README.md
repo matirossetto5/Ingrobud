@@ -22,7 +22,7 @@ npm install
 ### 2. Crear el proyecto de Firebase
 
 1. Andá a [console.firebase.google.com](https://console.firebase.google.com) y creá un proyecto nuevo (ej. `ingroma`).
-2. **Authentication** → Sign-in method → habilitá **Email/contraseña**. Luego, en la pestaña Users, creá manualmente tu usuario admin (tu email y una contraseña). No hay alta de usuarios pública: el acceso es solo para vos.
+2. **Authentication** → Sign-in method → habilitá **Email/contraseña**. Luego, en la pestaña Users, creá manualmente el usuario admin `matirossetto@msn.com` con su contraseña. Es el único método de acceso: la app y las reglas de Firestore/Storage rechazan cualquier otro usuario (el email está en `src/store/auth.ts`, `firestore.rules` y `storage.rules`). No hay alta de usuarios pública.
 3. **Firestore Database** → creá la base en modo producción (las reglas ya están en `firestore.rules`).
 4. **Storage** → activalo (las reglas ya están en `storage.rules`).
 5. **Configuración del proyecto** (ícono de engranaje) → **Tus apps** → agregá una app **Web** → copiá el objeto de configuración (`apiKey`, `authDomain`, etc.).
