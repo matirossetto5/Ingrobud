@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import { useClientes } from '@/hooks/useClientes'
 import { usePresupuesto, useCreatePresupuesto, useUpdatePresupuesto } from '@/hooks/usePresupuestos'
@@ -26,13 +26,18 @@ export function PresupuestoFormPage() {
   const { id } = useParams<{ id: string }>()
   const isEdit = Boolean(id)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const { data: clientes } = useClientes()
   const { data: presupuesto, isLoading } = usePresupuesto(id)
   const createPresupuesto = useCreatePresupuesto()
   const updatePresupuesto = useUpdatePresupuesto()
 
-  const [form, setForm] = useState<PresupuestoInput>(emptyPresupuestoInput)
+  // Desde la ficha del cliente se llega con ?cliente=<id> para que ya venga elegido.
+  const [form, setForm] = useState<PresupuestoInput>(() => ({
+    ...emptyPresupuestoInput(),
+    clienteId: isEdit ? '' : (searchParams.get('cliente') ?? ''),
+  }))
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -48,6 +53,12 @@ export function PresupuestoFormPage() {
       })
     }
   }, [presupuesto])
+
+  // El nombre se completa cuando llegan los clientes (preselección por ?cliente=).
+  if (form.clienteId && !form.clienteNombre && clientes) {
+    const cliente = clientes.find((c) => c.id === form.clienteId)
+    if (cliente) setForm((f) => ({ ...f, clienteNombre: cliente.nombre }))
+  }
 
   if (isEdit && isLoading) {
     return <p className="text-sm text-muted-foreground">Cargando presupuesto…</p>

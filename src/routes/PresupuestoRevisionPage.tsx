@@ -31,7 +31,7 @@ export function PresupuestoRevisionPage() {
     )
   }
 
-  const version: PresupuestoVersion = { ...revision, numero: presupuesto.numero }
+  const version: PresupuestoVersion = { ...revision, numero: presupuesto.numero, clienteId: presupuesto.clienteId }
 
   return (
     <div className="flex flex-col gap-6">

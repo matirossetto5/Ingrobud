@@ -60,7 +60,7 @@ export interface PresupuestoRevision {
 /** Lo mínimo que hace falta para mostrar o exportar una versión (vigente o archivada). */
 export type PresupuestoVersion = Pick<
   Presupuesto,
-  'numero' | 'revision' | 'clienteNombre' | 'fecha' | 'validoHasta' | 'estado' | 'secciones' | 'notas'
+  'numero' | 'revision' | 'clienteId' | 'clienteNombre' | 'fecha' | 'validoHasta' | 'estado' | 'secciones' | 'notas'
 >
 
 export function revisionLabel(revision: number): string {

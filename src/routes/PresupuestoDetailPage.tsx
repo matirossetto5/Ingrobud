@@ -55,7 +55,13 @@ export function PresupuestoDetailPage() {
             <Badge>{revisionLabel(presupuesto.revision)}</Badge>
             <Badge variant={estadoBadgeVariant(presupuesto.estado)}>{estadoLabel(presupuesto.estado)}</Badge>
           </div>
-          <p className="text-muted-foreground">{presupuesto.clienteNombre || 'Sin cliente'}</p>
+          {presupuesto.clienteId ? (
+            <Link to={`/clientes/${presupuesto.clienteId}`} className="text-muted-foreground hover:text-foreground hover:underline">
+              {presupuesto.clienteNombre || 'Ver cliente'}
+            </Link>
+          ) : (
+            <p className="text-muted-foreground">Sin cliente</p>
+          )}
           {presupuesto.motivoRevision && (
             <p className="mt-1 text-sm text-muted-foreground">
               Motivo de la revisión: <span className="text-foreground">{presupuesto.motivoRevision}</span>
@@ -103,7 +109,12 @@ function HistorialRevisiones({ presupuesto }: { presupuesto: Presupuesto }) {
 
   const filas: (PresupuestoVersion & { motivoRevision: string; vigente: boolean })[] = [
     { ...presupuesto, vigente: true },
-    ...(revisiones ?? []).map((r) => ({ ...r, numero: presupuesto.numero, vigente: false })),
+    ...(revisiones ?? []).map((r) => ({
+      ...r,
+      numero: presupuesto.numero,
+      clienteId: presupuesto.clienteId,
+      vigente: false,
+    })),
   ]
 
   return (

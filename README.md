@@ -131,8 +131,15 @@ repo hasta que estés conforme.
 - El PDF y el listado muestran el número de revisión (`presupuesto-12-rev1.pdf`)
 - Al eliminar un presupuesto se borra también su historial
 
+**Fase 8 (actual): Ficha del cliente y PDF con identidad de Ingroma** ✅
+- Ficha en `/clientes/:id`: datos de contacto, totales (aprobado, cobrado, saldo pendiente de lo aprobado),
+  presupuestos del cliente con su cobrado/saldo y pagos registrados
+- "Nuevo presupuesto" desde la ficha llega con el cliente ya elegido (`/presupuestos/nuevo?cliente=<id>`)
+- PDF rediseñado: logo, datos de contacto de la empresa (`src/lib/empresa.ts`), recuadro con los datos
+  completos del cliente, total destacado, pie con firma profesional y numeración de páginas
+
 **Próximas fases**
-- Fase 8: Deploy
+- Fase 9: Deploy
 
 ## Despliegue (a definir)
 

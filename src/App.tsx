@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LoginPage } from '@/routes/LoginPage'
 import { DashboardPage } from '@/routes/DashboardPage'
 import { ClientesPage } from '@/routes/ClientesPage'
+import { ClienteDetailPage } from '@/routes/ClienteDetailPage'
 import { PresupuestosPage } from '@/routes/PresupuestosPage'
 import { PresupuestoFormPage } from '@/routes/PresupuestoFormPage'
 import { PresupuestoDetailPage } from '@/routes/PresupuestoDetailPage'
@@ -26,6 +27,7 @@ function App() {
         >
           <Route path="/" element={<DashboardPage />} />
           <Route path="/clientes" element={<ClientesPage />} />
+          <Route path="/clientes/:id" element={<ClienteDetailPage />} />
           <Route path="/presupuestos" element={<PresupuestosPage />} />
           <Route path="/presupuestos/nuevo" element={<PresupuestoFormPage />} />
           <Route path="/presupuestos/:id" element={<PresupuestoDetailPage />} />
