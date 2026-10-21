@@ -37,6 +37,9 @@ function fromDoc(snap: DocumentSnapshot<DocumentData>): Presupuesto {
     estado: data.estado ?? 'borrador',
     secciones: data.secciones ?? [],
     notas: data.notas ?? '',
+    moneda: data.moneda ?? 'ARS',
+    mesBaseCac: data.mesBaseCac ?? '',
+    etapasPago: data.etapasPago ?? [],
     revision: data.revision ?? 0,
     motivoRevision: data.motivoRevision ?? '',
     createdAt: data.createdAt?.toMillis?.() ?? 0,
@@ -56,6 +59,9 @@ function revisionFromDoc(snap: DocumentSnapshot<DocumentData>): PresupuestoRevis
     estado: data.estado ?? 'borrador',
     secciones: data.secciones ?? [],
     notas: data.notas ?? '',
+    moneda: data.moneda ?? 'ARS',
+    mesBaseCac: data.mesBaseCac ?? '',
+    etapasPago: data.etapasPago ?? [],
     archivadaEn: data.archivadaEn?.toMillis?.() ?? 0,
   }
 }
@@ -119,6 +125,9 @@ export async function crearRevision(presupuesto: Presupuesto, motivo: string): P
     estado: presupuesto.estado,
     secciones: presupuesto.secciones,
     notas: presupuesto.notas,
+    moneda: presupuesto.moneda,
+    mesBaseCac: presupuesto.mesBaseCac,
+    etapasPago: presupuesto.etapasPago,
     archivadaEn: serverTimestamp(),
   })
   batch.update(ref, {

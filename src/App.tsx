@@ -8,6 +8,7 @@ import { PresupuestoFormPage } from '@/routes/PresupuestoFormPage'
 import { PresupuestoDetailPage } from '@/routes/PresupuestoDetailPage'
 import { PresupuestoRevisionPage } from '@/routes/PresupuestoRevisionPage'
 import { CobrosPage } from '@/routes/CobrosPage'
+import { IndicesPage } from '@/routes/IndicesPage'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { PwaUpdatePrompt } from '@/components/PwaUpdatePrompt'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/presupuestos/:id/editar" element={<PresupuestoFormPage />} />
           <Route path="/presupuestos/:id/revisiones/:revision" element={<PresupuestoRevisionPage />} />
           <Route path="/cobros" element={<CobrosPage />} />
+          <Route path="/indices" element={<IndicesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -5,22 +5,26 @@ import { useClientes } from '@/hooks/useClientes'
 import { usePresupuesto, useCreatePresupuesto, useUpdatePresupuesto } from '@/hooks/usePresupuestos'
 import {
   ESTADOS_PRESUPUESTO,
+  MONEDAS,
   calcularSubtotalSeccion,
   calcularTotalPresupuesto,
   emptyPresupuestoInput,
   nuevaSeccion,
   nuevoItem,
+  sumaPorcentajes,
+  type Moneda,
   type PresupuestoInput,
   type PresupuestoSeccion,
   revisionLabel,
 } from '@/types/presupuesto'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatMes } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { EtapasPagoEditor } from '@/components/presupuestos/EtapasPagoEditor'
 
 export function PresupuestoFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -50,6 +54,9 @@ export function PresupuestoFormPage() {
         estado: presupuesto.estado,
         secciones: presupuesto.secciones,
         notas: presupuesto.notas,
+        moneda: presupuesto.moneda,
+        mesBaseCac: presupuesto.mesBaseCac,
+        etapasPago: presupuesto.etapasPago,
       })
     }
   }, [presupuesto])
@@ -124,6 +131,14 @@ export function PresupuestoFormPage() {
     }
     if (form.secciones.every((s) => s.items.every((i) => !i.descripcion.trim()))) {
       setError('Agregá al menos un ítem con descripción.')
+      return
+    }
+    if (form.etapasPago.length > 0 && Math.abs(sumaPorcentajes(form.etapasPago) - 100) > 0.01) {
+      setError('Los porcentajes de las etapas de pago tienen que sumar 100%.')
+      return
+    }
+    if (form.moneda === 'ARS' && !form.mesBaseCac) {
+      setError('Indicá el mes base para la actualización por CAC.')
       return
     }
     setError(null)
@@ -211,6 +226,37 @@ export function PresupuestoFormPage() {
               onChange={(e) => update('validoHasta', e.target.value)}
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="moneda">Moneda</Label>
+            {/* Ver nota sobre Radix Select y '' en el selector de estado. */}
+            <Select value={form.moneda} onValueChange={(v) => v && update('moneda', v as Moneda)}>
+              <SelectTrigger id="moneda">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONEDAS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {form.moneda === 'ARS' && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="mesBaseCac">Mes base (índice CAC)</Label>
+              <Input
+                id="mesBaseCac"
+                type="month"
+                value={form.mesBaseCac}
+                onChange={(e) => update('mesBaseCac', e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Precios a valores de {formatMes(form.mesBaseCac) || '—'}. Lo que quede pendiente se actualiza por CAC al
+                cobrarse.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -285,7 +331,10 @@ export function PresupuestoFormPage() {
                   Ítem
                 </Button>
                 <p className="text-sm text-muted-foreground">
-                  Subtotal: <span className="font-medium text-foreground">{formatCurrency(calcularSubtotalSeccion(seccion))}</span>
+                  Subtotal:{' '}
+                  <span className="font-medium text-foreground">
+                    {formatCurrency(calcularSubtotalSeccion(seccion), form.moneda)}
+                  </span>
                 </p>
               </div>
             </CardContent>
@@ -298,13 +347,30 @@ export function PresupuestoFormPage() {
       </div>
 
       <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Forma de pago</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Etapas de pago con su porcentaje o monto. Podés cargar cualquiera de los dos.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <EtapasPagoEditor
+            etapas={form.etapasPago}
+            total={total}
+            moneda={form.moneda}
+            onChange={(etapasPago) => update('etapasPago', etapasPago)}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardContent className="flex flex-col gap-4 p-6">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="notas">Notas</Label>
             <Textarea id="notas" value={form.notas} onChange={(e) => update('notas', e.target.value)} />
           </div>
           <div className="flex items-center justify-end gap-2 text-lg font-semibold">
-            Total: {formatCurrency(total)}
+            Total: {formatCurrency(total, form.moneda)}
           </div>
         </CardContent>
       </Card>

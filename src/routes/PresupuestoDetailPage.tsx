@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PresupuestoContenido } from '@/components/presupuestos/PresupuestoContenido'
+import { CobranzaPorEtapa } from '@/components/cobros/CobranzaPorEtapa'
 
 export function PresupuestoDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -92,6 +93,8 @@ export function PresupuestoDetailPage() {
 
       <PresupuestoContenido presupuesto={presupuesto} />
 
+      <CobranzaPorEtapa presupuesto={presupuesto} />
+
       <HistorialRevisiones presupuesto={presupuesto} />
 
       <NuevaRevisionDialog
@@ -150,7 +153,7 @@ function HistorialRevisiones({ presupuesto }: { presupuesto: Presupuesto }) {
                   {fila.motivoRevision || (fila.revision === 0 ? 'Versión original' : '—')}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  {formatCurrency(calcularTotalPresupuesto(fila.secciones))}
+                  {formatCurrency(calcularTotalPresupuesto(fila.secciones), fila.moneda)}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">

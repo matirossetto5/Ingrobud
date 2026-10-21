@@ -4,7 +4,8 @@ import { ArrowLeft, Building2, Eye, Mail, MapPin, Pencil, Phone, Plus } from 'lu
 import { useCliente, useUpdateCliente } from '@/hooks/useClientes'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
 import { usePagos } from '@/hooks/usePagos'
-import { calcularResumenCobros, esCobrable, saldoPendiente } from '@/lib/cobros'
+import { useIndicesCac } from '@/hooks/useIndicesCac'
+import { calcularResumenCobros, esCobrable, saldoActualizado, saldoPendiente, sumarPorMoneda } from '@/lib/cobros'
 import { estadoBadgeVariant, estadoLabel, revisionLabel } from '@/types/presupuesto'
 import { metodoLabel } from '@/types/pago'
 import type { ClienteInput } from '@/types/cliente'
@@ -14,6 +15,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
+import { MontosPorMoneda } from '@/components/MontosPorMoneda'
+import { DetalleMontoPago } from '@/components/cobros/DetalleMontoPago'
 
 export function ClienteDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,6 +24,7 @@ export function ClienteDetailPage() {
   const { data: cliente, isLoading, isError } = useCliente(id)
   const { data: presupuestos, isLoading: loadingPresupuestos } = usePresupuestos()
   const { data: pagos, isLoading: loadingPagos } = usePagos()
+  const { data: indices } = useIndicesCac()
   const updateCliente = useUpdateCliente()
   const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -44,9 +48,9 @@ export function ClienteDetailPage() {
   const pagosCliente = (pagos ?? []).filter((p) => p.clienteId === cliente.id)
   const resumen = calcularResumenCobros(presupuestosCliente, pagosCliente)
   const aprobados = resumen.filter(esCobrable)
-  const totalAprobado = aprobados.reduce((sum, r) => sum + r.total, 0)
-  const totalCobrado = pagosCliente.reduce((sum, p) => sum + p.monto, 0)
-  const totalPendiente = aprobados.reduce((sum, r) => sum + saldoPendiente(r), 0)
+  const totalAprobado = sumarPorMoneda(aprobados, (r) => r.moneda, (r) => r.total)
+  const totalCobrado = sumarPorMoneda(pagosCliente, (p) => p.moneda, (p) => p.monto)
+  const totalPendiente = sumarPorMoneda(aprobados, (r) => r.moneda, (r) => saldoActualizado(r, indices ?? []).monto)
   const numeroPorPresupuesto = new Map(presupuestosCliente.map((p) => [p.id, p.numero]))
 
   async function handleSubmit(input: ClienteInput) {
@@ -110,7 +114,7 @@ export function ClienteDetailPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Aprobado</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatCurrency(totalAprobado)}</p>
+            <MontosPorMoneda montos={totalAprobado} />
             <p className="text-xs text-muted-foreground">
               {aprobados.length} de {presupuestosCliente.length} presupuesto{presupuestosCliente.length === 1 ? '' : 's'}
             </p>
@@ -121,7 +125,7 @@ export function ClienteDetailPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Cobrado</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatCurrency(totalCobrado)}</p>
+            <MontosPorMoneda montos={totalCobrado} />
             <p className="text-xs text-muted-foreground">
               {pagosCliente.length} pago{pagosCliente.length === 1 ? '' : 's'}
             </p>
@@ -132,8 +136,8 @@ export function ClienteDetailPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Saldo pendiente</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatCurrency(totalPendiente)}</p>
-            <p className="text-xs text-muted-foreground">De presupuestos aprobados</p>
+            <MontosPorMoneda montos={totalPendiente} />
+            <p className="text-xs text-muted-foreground">De presupuestos aprobados, pesos actualizados por CAC</p>
           </CardContent>
         </Card>
       </div>
@@ -156,12 +160,14 @@ export function ClienteDetailPage() {
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">Cobrado</TableHead>
-                  <TableHead className="text-right">Saldo</TableHead>
+                  <TableHead className="text-right">Saldo base</TableHead>
                   <TableHead className="text-right">Ver</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {resumen.map(({ presupuesto, total, cobrado, saldo }) => (
+                {resumen.map((r) => {
+                  const { presupuesto, total, cobradoNominal, moneda } = r
+                  return (
                   <TableRow key={presupuesto.id}>
                     <TableCell className="font-medium whitespace-nowrap">
                       {presupuesto.numero}
@@ -175,10 +181,10 @@ export function ClienteDetailPage() {
                     <TableCell>
                       <Badge variant={estadoBadgeVariant(presupuesto.estado)}>{estadoLabel(presupuesto.estado)}</Badge>
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">{formatCurrency(total)}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">{formatCurrency(cobrado)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">{formatCurrency(total, moneda)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">{formatCurrency(cobradoNominal, moneda)}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {esCobrable({ presupuesto, total, cobrado, saldo }) ? formatCurrency(saldo) : '—'}
+                      {esCobrable(r) ? formatCurrency(saldoPendiente(r), moneda) : '—'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" aria-label="Ver presupuesto" asChild>
@@ -188,7 +194,8 @@ export function ClienteDetailPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           )}
@@ -220,7 +227,9 @@ export function ClienteDetailPage() {
                     <TableCell>N° {numeroPorPresupuesto.get(pago.presupuestoId) ?? '—'}</TableCell>
                     <TableCell className="text-muted-foreground">{metodoLabel(pago.metodo)}</TableCell>
                     <TableCell className="text-muted-foreground">{pago.notas || '—'}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">{formatCurrency(pago.monto)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <DetalleMontoPago pago={pago} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

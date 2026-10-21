@@ -79,7 +79,7 @@ export function PresupuestosPage() {
                   <TableCell>
                     <Badge variant={estadoBadgeVariant(presupuesto.estado)}>{estadoLabel(presupuesto.estado)}</Badge>
                   </TableCell>
-                  <TableCell className="text-right">{formatCurrency(calcularTotalPresupuesto(presupuesto.secciones))}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(calcularTotalPresupuesto(presupuesto.secciones), presupuesto.moneda)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" aria-label="Ver" asChild>

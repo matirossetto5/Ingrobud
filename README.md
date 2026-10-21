@@ -141,8 +141,24 @@ repo hasta que estés conforme.
   (`esCobrable`/`saldoPendiente` en `src/lib/cobros.ts`). Un presupuesto con pagos que deja de estar
   aprobado (p. ej. pasa a una nueva revisión en borrador) sigue listado en Cobros, sin sumar al pendiente
 
+**Fase 9 (actual): Forma de pago por etapas y actualización por índice CAC** ✅
+- Moneda por presupuesto: **ARS** (se actualiza por CAC) o **USD** (sin actualización). Totales
+  de Cobros, Dashboard y ficha separados por moneda
+- Plan de pagos por etapas (anticipo, etapas intermedias, final) cargando % o monto; los porcentajes
+  tienen que sumar 100%
+- Mes base de la cotización (ARS) y pantalla **Índices CAC** (`indicesCac/{YYYY-MM}`) para cargar el
+  índice mensual (nivel general)
+- Cada pago cancela un monto **a valores base** y se cobra actualizado:
+  `cobrado = base × CAC(mes aplicado) / CAC(mes base)`. Por defecto se aplica el índice del mes anterior
+  al pago (el último publicado), editable; si el mes aplicado no es posterior al base no hay actualización.
+  Lo ya cobrado queda congelado y solo lo pendiente se sigue actualizando
+- Cobranza por etapa en el detalle del presupuesto (cancelado, pendiente y pendiente actualizado al
+  último CAC), con registro de pago por etapa
+- PDF con tabla de forma de pago y cláusula de moneda/actualización
+- Pagos y presupuestos anteriores siguen funcionando: se toman como pesos sin actualización
+
 **Próximas fases**
-- Fase 9: Deploy
+- Fase 10: Deploy
 
 ## Despliegue (a definir)
 

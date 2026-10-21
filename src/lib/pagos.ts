@@ -29,6 +29,12 @@ function fromDoc(snap: QueryDocumentSnapshot<DocumentData>): Pago {
     clienteNombre: data.clienteNombre ?? '',
     fecha: data.fecha ?? '',
     monto: data.monto ?? 0,
+    // Pagos anteriores a las etapas/CAC: en pesos, sin actualización, cancelan su monto nominal.
+    moneda: data.moneda ?? 'ARS',
+    etapaId: data.etapaId ?? '',
+    montoBase: data.montoBase ?? data.monto ?? 0,
+    mesIndice: data.mesIndice ?? '',
+    coeficiente: data.coeficiente ?? 1,
     metodo: data.metodo ?? 'otro',
     notas: data.notas ?? '',
     createdAt: data.createdAt?.toMillis?.() ?? 0,

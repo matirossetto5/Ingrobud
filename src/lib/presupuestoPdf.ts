@@ -1,9 +1,10 @@
 import type { jsPDF } from 'jspdf'
 import type { PresupuestoVersion } from '@/types/presupuesto'
-import { calcularSubtotalSeccion, calcularTotalPresupuesto, revisionLabel } from '@/types/presupuesto'
+import { calcularSubtotalSeccion, calcularTotalPresupuesto, montoEtapa, revisionLabel } from '@/types/presupuesto'
+import { textoActualizacion } from '@/lib/condiciones'
 import { getCliente } from '@/lib/clientes'
 import { EMPRESA } from '@/lib/empresa'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatPorcentaje } from '@/lib/utils'
 import logoUrl from '@/assets/brand/logo-lockup-pdf.png'
 
 type JsPdfWithAutoTable = jsPDF & { lastAutoTable: { finalY: number } }
@@ -14,6 +15,13 @@ const MARGIN_X = 14
 const INK: [number, number, number] = [8, 6, 13]
 const MUTED: [number, number, number] = [113, 113, 122]
 const LOGO_ASPECT = 900 / 204
+
+/** Alinea a la derecha encabezado y celdas de las columnas numéricas. */
+function alinearDerecha(columnas: number[]) {
+  return (data: { column: { index: number }; cell: { styles: { halign?: string } } }) => {
+    if (columnas.includes(data.column.index)) data.cell.styles.halign = 'right'
+  }
+}
 
 async function cargarLogo(): Promise<string | null> {
   try {
@@ -38,6 +46,7 @@ export async function generarPresupuestoPdf(presupuesto: PresupuestoVersion): Pr
     presupuesto.clienteId ? getCliente(presupuesto.clienteId).catch(() => null) : Promise.resolve(null),
   ])
   const doc = new jsPDF() as JsPdfWithAutoTable
+  const money = (value: number) => formatCurrency(value, presupuesto.moneda)
   const right = PAGE_WIDTH - MARGIN_X
   let cursorY = 14
 
@@ -114,14 +123,14 @@ export async function generarPresupuestoPdf(presupuesto: PresupuestoVersion): Pr
       body: seccion.items.map((item) => [
         item.descripcion || '—',
         String(item.cantidad),
-        formatCurrency(item.precioUnitario),
-        formatCurrency(item.cantidad * item.precioUnitario),
+        money(item.precioUnitario),
+        money(item.cantidad * item.precioUnitario),
       ]),
-      foot: [['', '', 'Subtotal', formatCurrency(calcularSubtotalSeccion(seccion))]],
+      foot: [['', '', 'Subtotal', money(calcularSubtotalSeccion(seccion))]],
       styles: { fontSize: 9 },
       headStyles: { fillColor: INK },
       footStyles: { fillColor: [244, 244, 245], textColor: INK },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+      didParseCell: alinearDerecha([1, 2, 3]),
     })
 
     cursorY = doc.lastAutoTable.finalY + 8
@@ -139,10 +148,51 @@ export async function generarPresupuestoPdf(presupuesto: PresupuestoVersion): Pr
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.text('TOTAL', right - 76, cursorY + 0.5)
-  doc.text(formatCurrency(total), right - 4, cursorY + 0.5, { align: 'right' })
+  doc.text(money(total), right - 4, cursorY + 0.5, { align: 'right' })
   doc.setTextColor(...INK)
   doc.setFont('helvetica', 'normal')
   cursorY += 14
+
+  // Forma de pago y cláusula de moneda/actualización.
+  doc.setFontSize(9)
+  const condiciones = doc.splitTextToSize(textoActualizacion(presupuesto), PAGE_WIDTH - MARGIN_X * 2)
+  if (cursorY + 20 + presupuesto.etapasPago.length * 7 > PAGE_HEIGHT - 22) {
+    doc.addPage()
+    cursorY = 20
+  }
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.text('Forma de pago', MARGIN_X, cursorY)
+  doc.setFont('helvetica', 'normal')
+  cursorY += 4
+  if (presupuesto.etapasPago.length > 0) {
+    autoTable(doc, {
+      startY: cursorY,
+      margin: { left: MARGIN_X, right: MARGIN_X, bottom: 22 },
+      head: [['Etapa', '%', 'Monto']],
+      body: presupuesto.etapasPago.map((etapa) => [
+        etapa.descripcion || '—',
+        formatPorcentaje(etapa.porcentaje),
+        money(montoEtapa(total, etapa)),
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: INK },
+      columnStyles: { 1: { cellWidth: 25 }, 2: { cellWidth: 45 } },
+      didParseCell: alinearDerecha([1, 2]),
+    })
+    cursorY = doc.lastAutoTable.finalY + 6
+  } else {
+    cursorY += 2
+  }
+  if (cursorY + condiciones.length * 4.5 > PAGE_HEIGHT - 22) {
+    doc.addPage()
+    cursorY = 20
+  }
+  doc.setFontSize(9)
+  doc.setTextColor(...MUTED)
+  doc.text(condiciones, MARGIN_X, cursorY)
+  doc.setTextColor(...INK)
+  cursorY += condiciones.length * 4.5 + 6
 
   if (presupuesto.notas) {
     const lines = doc.splitTextToSize(presupuesto.notas, PAGE_WIDTH - MARGIN_X * 2)
