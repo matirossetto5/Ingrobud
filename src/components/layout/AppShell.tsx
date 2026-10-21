@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Users, FileText, Wallet, LogOut, Download, WifiOff } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, Wallet, TrendingUp, LogOut, Download, WifiOff } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/presupuestos', label: 'Presupuestos', icon: FileText },
   { to: '/cobros', label: 'Cobros', icon: Wallet },
+  { to: '/indices', label: 'Índices CAC', shortLabel: 'Índices', icon: TrendingUp },
 ]
 
 export function AppShell() {
@@ -25,7 +26,7 @@ export function AppShell() {
           <img src={icon} alt="" className="h-8 w-8 rounded-md" />
           <span className="text-base font-semibold">Ingroma</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1">
+        <nav className="flex min-w-0 flex-1 flex-col gap-1">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -61,7 +62,7 @@ export function AppShell() {
         </button>
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-border bg-background px-4 py-3 sm:hidden">
           <div className="flex items-center gap-2">
             <img src={icon} alt="" className="h-7 w-7 rounded-md" />
@@ -91,20 +92,20 @@ export function AppShell() {
         </main>
 
         <nav className="flex items-center justify-around border-t border-border bg-background py-2 sm:hidden">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, shortLabel, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center gap-1 px-3 py-1 text-xs text-muted-foreground',
+                  'flex flex-col items-center gap-1 px-2 py-1 text-xs text-muted-foreground',
                   isActive && 'text-foreground',
                 )
               }
             >
               <Icon className="h-5 w-5" />
-              {label}
+              {shortLabel ?? label}
             </NavLink>
           ))}
         </nav>

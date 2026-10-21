@@ -7,6 +7,20 @@ export const ESTADOS_PRESUPUESTO: { value: EstadoPresupuesto; label: string }[] 
   { value: 'rechazado', label: 'Rechazado' },
 ]
 
+export type Moneda = 'ARS' | 'USD'
+
+export const MONEDAS: { value: Moneda; label: string }[] = [
+  { value: 'ARS', label: 'Pesos (ARS) — actualiza por CAC' },
+  { value: 'USD', label: 'Dólares (USD) — sin actualización' },
+]
+
+/** Etapa del plan de pagos. El monto sale del porcentaje sobre el total, así sobrevive a cambios de precios. */
+export interface EtapaPago {
+  id: string
+  descripcion: string
+  porcentaje: number
+}
+
 export interface PresupuestoItem {
   id: string
   descripcion: string
@@ -30,14 +44,74 @@ export interface Presupuesto {
   estado: EstadoPresupuesto
   secciones: PresupuestoSeccion[]
   notas: string
+  moneda: Moneda
+  /** Mes base de la cotización (`YYYY-MM`) para actualizar por índice CAC. Solo aplica en pesos. */
+  mesBaseCac: string
+  etapasPago: EtapaPago[]
+  /** Revisión vigente: 0 es la versión original, cada nueva revisión suma 1. */
+  revision: number
+  /** Motivo de la revisión vigente (vacío en la revisión 0). */
+  motivoRevision: string
   createdAt: number
   updatedAt: number
 }
 
-export type PresupuestoInput = Omit<Presupuesto, 'id' | 'numero' | 'createdAt' | 'updatedAt'>
+export type PresupuestoInput = Omit<
+  Presupuesto,
+  'id' | 'numero' | 'revision' | 'motivoRevision' | 'createdAt' | 'updatedAt'
+>
+
+/** Copia congelada de una revisión anterior, guardada en `presupuestos/{id}/revisiones/{revision}`. */
+export interface PresupuestoRevision {
+  revision: number
+  motivoRevision: string
+  clienteNombre: string
+  fecha: string
+  validoHasta: string
+  estado: EstadoPresupuesto
+  secciones: PresupuestoSeccion[]
+  notas: string
+  moneda: Moneda
+  mesBaseCac: string
+  etapasPago: EtapaPago[]
+  /** Momento en que esta revisión fue reemplazada por la siguiente. */
+  archivadaEn: number
+}
+
+/** Lo mínimo que hace falta para mostrar o exportar una versión (vigente o archivada). */
+export type PresupuestoVersion = Pick<
+  Presupuesto,
+  | 'numero'
+  | 'revision'
+  | 'clienteId'
+  | 'clienteNombre'
+  | 'fecha'
+  | 'validoHasta'
+  | 'estado'
+  | 'secciones'
+  | 'notas'
+  | 'moneda'
+  | 'mesBaseCac'
+  | 'etapasPago'
+>
+
+export function revisionLabel(revision: number): string {
+  return `Rev. ${revision}`
+}
 
 export function nuevoItem(): PresupuestoItem {
   return { id: crypto.randomUUID(), descripcion: '', cantidad: 1, precioUnitario: 0 }
+}
+
+export function nuevaEtapa(descripcion = '', porcentaje = 0): EtapaPago {
+  return { id: crypto.randomUUID(), descripcion, porcentaje }
+}
+
+/** Mes anterior a la fecha dada (`YYYY-MM-DD` o `YYYY-MM`), en formato `YYYY-MM`. */
+export function mesAnterior(fecha: string): string {
+  const [year, month] = fecha.split('-').map(Number)
+  const d = new Date(year, month - 2, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
 export function nuevaSeccion(): PresupuestoSeccion {
@@ -53,6 +127,10 @@ export function emptyPresupuestoInput(): PresupuestoInput {
     estado: 'borrador',
     secciones: [nuevaSeccion()],
     notas: '',
+    moneda: 'ARS',
+    // Se carga a mano: es el mes al que corresponden los precios cotizados.
+    mesBaseCac: '',
+    etapasPago: [nuevaEtapa('Anticipo', 50), nuevaEtapa('Al finalizar el trabajo', 50)],
   }
 }
 
@@ -62,6 +140,18 @@ export function calcularSubtotalSeccion(seccion: PresupuestoSeccion): number {
 
 export function calcularTotalPresupuesto(secciones: PresupuestoSeccion[]): number {
   return secciones.reduce((sum, seccion) => sum + calcularSubtotalSeccion(seccion), 0)
+}
+
+export function montoEtapa(total: number, etapa: EtapaPago): number {
+  return (total * etapa.porcentaje) / 100
+}
+
+export function sumaPorcentajes(etapas: EtapaPago[]): number {
+  return etapas.reduce((sum, e) => sum + e.porcentaje, 0)
+}
+
+export function actualizaPorCac(presupuesto: Pick<Presupuesto, 'moneda' | 'mesBaseCac'>): boolean {
+  return presupuesto.moneda === 'ARS' && Boolean(presupuesto.mesBaseCac)
 }
 
 export function estadoBadgeVariant(estado: EstadoPresupuesto): 'default' | 'primary' | 'success' | 'destructive' {

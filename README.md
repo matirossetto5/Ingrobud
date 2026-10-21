@@ -122,10 +122,80 @@ repo hasta que estés conforme.
 - Banner de "sin conexión" cuando se pierde la red
 - `navigateFallback` a `index.html` para navegación offline y metatags iOS (`apple-mobile-web-app-*`)
 
+**Fase 7 (actual): Revisiones de presupuestos** ✅
+- Cada presupuesto tiene una revisión vigente (`Rev. 0` es la original) y un historial de versiones anteriores
+- "Nueva revisión" (desde el detalle) pide el motivo, archiva la versión vigente tal cual en
+  `presupuestos/{id}/revisiones/{n}` y abre la siguiente como borrador para editarla
+- Historial con fecha, estado, motivo y total de cada revisión; las anteriores se pueden ver (solo lectura)
+  y descargar en PDF
+- El PDF y el listado muestran el número de revisión (`presupuesto-12-rev1.pdf`)
+- Al eliminar un presupuesto se borra también su historial
+
+**Fase 8 (actual): Ficha del cliente y PDF con identidad de Ingroma** ✅
+- Ficha en `/clientes/:id`: datos de contacto, totales (aprobado, cobrado, saldo pendiente de lo aprobado),
+  presupuestos del cliente con su cobrado/saldo y pagos registrados
+- "Nuevo presupuesto" desde la ficha llega con el cliente ya elegido (`/presupuestos/nuevo?cliente=<id>`)
+- PDF rediseñado: logo, datos de contacto de la empresa (`src/lib/empresa.ts`), recuadro con los datos
+  completos del cliente, total destacado, pie con firma profesional y numeración de páginas
+- Saldos pendientes (Cobros, Dashboard y ficha) cuentan solo presupuestos **aprobados**
+  (`esCobrable`/`saldoPendiente` en `src/lib/cobros.ts`). Un presupuesto con pagos que deja de estar
+  aprobado (p. ej. pasa a una nueva revisión en borrador) sigue listado en Cobros, sin sumar al pendiente
+
+**Fase 9 (actual): Forma de pago por etapas y actualización por índice CAC** ✅
+- Moneda por presupuesto: **ARS** (se actualiza por CAC) o **USD** (sin actualización). Totales
+  de Cobros, Dashboard y ficha separados por moneda
+- Plan de pagos por etapas (anticipo, etapas intermedias, final) cargando % o monto; los porcentajes
+  tienen que sumar 100%
+- Mes base de la cotización (ARS), cargado a mano, y pantalla **Índices CAC** (`indicesCac/{YYYY-MM}`)
+  para cargar a mano el índice mensual (nivel general)
+- Cada pago cancela un monto **a valores base** y se cobra actualizado:
+  `cobrado = base × máx(1, CAC(mes aplicado) / CAC(mes base))`. El mes del índice aplicado se elige a mano
+  en cada pago y el monto nunca queda por debajo del base. Lo ya cobrado queda congelado y solo lo
+  pendiente se sigue actualizando
+- Cobranza por etapa en el detalle del presupuesto (cancelado, pendiente y pendiente actualizado al
+  último CAC), con registro de pago por etapa
+- PDF con tabla de forma de pago y cláusula de moneda/actualización
+- Pagos y presupuestos anteriores siguen funcionando: se toman como pesos sin actualización
+
+**Fase 10 (actual): Recibos de pago** ✅
+- Recibo en PDF por pago con número correlativo (`counters/recibos`, asignado al registrar el pago en la
+  misma transacción; los pagos anteriores reciben número al emitir su primer recibo)
+- Monto en letras, concepto (etapa y presupuesto), forma de pago, detalle de la actualización CAC
+  (monto base, índices, coeficiente) y estado de cuenta del presupuesto después del pago
+- "Registrar y emitir recibo" al cargar el pago, y descarga desde Cobros, la cobranza del presupuesto y
+  la ficha del cliente
+- Cada pago guarda los valores de índice usados, así el recibo no cambia si después se corrige la tabla
+
 **Próximas fases**
-- Fase 7: Deploy
+- Fase 11: Deploy
 
-## Despliegue (a definir)
+## Despliegue
 
-Pendiente de decidir entre Firebase Hosting, Vercel o Netlify. La app es un SPA estático
-(`npm run build` genera `dist/`), así que cualquiera de las tres opciones funciona sin cambios.
+- **App (frontend):** Netlify, proyecto `ingrobud` → https://ingrobud.netlify.app
+- **Base de datos y login:** Firebase (Auth + Firestore + Storage), proyecto `ingrobud`
+
+### Netlify
+
+La configuración está en `netlify.toml`: build `npm run build`, publica `dist/`, Node 22, regla de SPA
+(`/* → /index.html 200`, necesaria para recargar rutas como `/presupuestos/<id>`) y headers de caché
+para que las actualizaciones de la PWA lleguen enseguida.
+
+En Netlify (Project configuration):
+1. **Build & deploy → Continuous deployment → Branches:** branch de producción `main`.
+2. **Environment variables:** `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
+   `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`,
+   `VITE_FIREBASE_APP_ID` (los valores del paso 2 del setup). **No** definir `VITE_USE_FIREBASE_EMULATOR`.
+   Si se cambia alguna, hay que volver a deployar (Vite las incrusta en el build).
+
+Cada push a `main` dispara un deploy.
+
+### Firebase
+
+1. **Authentication → Settings → Authorized domains:** agregar `ingrobud.netlify.app` (y el dominio
+   propio, si se usa uno). Sin esto el login falla en producción.
+2. **Reglas de seguridad:** desplegarlas cada vez que cambien `firestore.rules` o `storage.rules`:
+   ```bash
+   firebase deploy --only firestore:rules,storage:rules
+   ```
+   Las reglas permiten todo solo al email admin, así que cubren las colecciones nuevas
+   (`indicesCac`, `counters/recibos`, `presupuestos/*/revisiones`) sin cambios.
