@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
 import { usePagos } from '@/hooks/usePagos'
-import { calcularResumenCobros } from '@/lib/cobros'
+import { useIndicesCac } from '@/hooks/useIndicesCac'
+import { calcularResumenCobros, saldoActualizado, saldoPendiente, sumarPorMoneda } from '@/lib/cobros'
+import { MontosPorMoneda } from '@/components/MontosPorMoneda'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { estadoBadgeVariant, estadoLabel } from '@/types/presupuesto'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,19 +18,22 @@ function isMismoMes(fecha: string, referencia: Date): boolean {
 export function DashboardPage() {
   const { data: presupuestos } = usePresupuestos()
   const { data: pagos } = usePagos()
+  const { data: indices } = useIndicesCac()
 
   const ahora = new Date()
-  const cobradoEsteMes = (pagos ?? [])
-    .filter((pago) => isMismoMes(pago.fecha, ahora))
-    .reduce((sum, pago) => sum + pago.monto, 0)
+  const cobradoEsteMes = sumarPorMoneda(
+    (pagos ?? []).filter((pago) => isMismoMes(pago.fecha, ahora)),
+    (pago) => pago.moneda,
+    (pago) => pago.monto,
+  )
 
   const resumen = calcularResumenCobros(presupuestos ?? [], pagos ?? [])
-  const pendienteDeCobro = resumen.reduce((sum, r) => sum + Math.max(r.saldo, 0), 0)
+  const pendienteDeCobro = sumarPorMoneda(resumen, (r) => r.moneda, (r) => saldoActualizado(r, indices ?? []).monto)
   const presupuestosEnviados = (presupuestos ?? []).filter((p) => p.estado === 'enviado').length
 
   const pendientes = resumen
-    .filter((r) => r.saldo > 0)
-    .sort((a, b) => b.saldo - a.saldo)
+    .filter((r) => saldoPendiente(r) > 0)
+    .sort((a, b) => saldoPendiente(b) - saldoPendiente(a))
     .slice(0, 5)
 
   const ultimosPagos = (pagos ?? []).slice(0, 5)
@@ -45,7 +50,7 @@ export function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Cobrado este mes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatCurrency(cobradoEsteMes)}</p>
+            <MontosPorMoneda montos={cobradoEsteMes} />
           </CardContent>
         </Card>
         <Card>
@@ -53,7 +58,8 @@ export function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Pendiente de cobro</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatCurrency(pendienteDeCobro)}</p>
+            <MontosPorMoneda montos={pendienteDeCobro} />
+            <p className="text-xs text-muted-foreground">Pesos actualizados al último índice CAC cargado</p>
           </CardContent>
         </Card>
         <Card>
@@ -85,7 +91,7 @@ export function DashboardPage() {
                     <span className="font-medium">N° {r.presupuesto.numero}</span>
                     <span className="text-muted-foreground">{r.presupuesto.clienteNombre}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(r.saldo)}</span>
+                  <span className="font-medium">{formatCurrency(saldoActualizado(r, indices ?? []).monto, r.moneda)}</span>
                 </Link>
               ))
             )}
@@ -106,7 +112,7 @@ export function DashboardPage() {
                     <span className="font-medium">{pago.clienteNombre || '—'}</span>
                     <span className="text-xs text-muted-foreground">{formatDate(pago.fecha)}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(pago.monto)}</span>
+                  <span className="font-medium">{formatCurrency(pago.monto, pago.moneda)}</span>
                 </div>
               ))
             )}

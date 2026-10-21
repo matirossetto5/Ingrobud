@@ -1,11 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createCliente, deleteCliente, getClientes, updateCliente } from '@/lib/clientes'
+import { createCliente, deleteCliente, getCliente, getClientes, updateCliente } from '@/lib/clientes'
 import type { ClienteInput } from '@/types/cliente'
 
 const clientesKey = ['clientes'] as const
 
 export function useClientes() {
   return useQuery({ queryKey: clientesKey, queryFn: getClientes })
+}
+
+export function useCliente(id: string | undefined) {
+  return useQuery({
+    queryKey: [...clientesKey, id ?? ''],
+    queryFn: () => getCliente(id!),
+    enabled: Boolean(id),
+  })
 }
 
 export function useCreateCliente() {
